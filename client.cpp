@@ -208,13 +208,47 @@ int main (int argc, char *argv[])
     //       single data packet, and then tears down the connection without
     //       handling data loss.
     //       Only for demo purpose. DO NOT USE IT in your final submission
+    seqNum = (seqNum + m) % MAX_SEQN;
+    bool no_more_data = false;
     while (1) {
+        while (e != s && !no_more_data) {
+            m = fread(buf, 1, PAYLOAD_SIZE, fp);
+            if (m) {
+                buildPkt(&pkts[e], seqNum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 0, m, buf);
+                seqNum = (seqNum + m) % MAX_SEQN;
+                printSend(&pkts[e], 0);
+                sendto(sockfd, &pkts[e], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
+            } else {
+                no_more_data = true
+                break;
+            }
+            e = (e + 1) % WND_SIZE;
+        }
         n = recvfrom(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr *) &servaddr, (socklen_t *) &servaddrlen);
-        if (n > 0) {
+        while (pkts[s].seqnum != ackpkt.acknum) {
+            printRecv(pkts[s]);
+            s = (s + 1) % WND_SIZE;
+            timer = setTimer();
+        }
+        // checking if packet was lost (timeout; resend all packets in window)
+        if (isTimeout(timer)) {
+            printTimeout(pkts[s])
+            int tmp_s = s;
+            int tmp_e = e;
+            timer = setTimer();
+            while (tmp_s != tmp_e) {
+                buildPkt(&pkts[tmp_s], pkts[tmp_s].seqnum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 1, pkts[tmp_s].length, pkts[tmp_s].payload);
+                printSend(pkts[tmp_s],1);
+                sendto(sockfd, &pkts[tmp_s], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
+                tmp_s = (tmp_s + 1) % WND_SIZE;
+            }
+        }
+        // end while loop if no more data to be read and all data has been acked
+        if (no_more_data && s == e) {
             break;
         }
+            
     }
-
     // *** End of your client implementation ***
     fclose(fp);
 
