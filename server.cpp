@@ -147,7 +147,7 @@ int main (int argc, char *argv[])
             sendto(sockfd, &synackpkt, PKT_SIZE, 0, (struct sockaddr*) &cliaddr, cliaddrlen);
             
             while(1) {
-                n = recvfrom(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr *) &cliaddr, (socklen_t *) &cliaddrlen);
+                n = recvfrom(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr*) &cliaddr, (socklen_t *) &cliaddrlen);
                 if (n > 0) {
                     printRecv(&ackpkt);
                     if (ackpkt.seqnum == cliSeqNum && ackpkt.ack && ackpkt.acknum == (synackpkt.seqnum + 1) % MAX_SEQN) {
@@ -193,7 +193,8 @@ int main (int argc, char *argv[])
         //       without handling data loss.
         //       Only for demo purpose. DO NOT USE IT in your final submission
         struct packet recvpkt;
-
+        int prev_seqnum = ackpkt.seqnum;
+        int prev_acknum = ackpkt.acknum;
         while(1) {
             n = recvfrom(sockfd, &recvpkt, PKT_SIZE, 0, (struct sockaddr *) &cliaddr, (socklen_t *) &cliaddrlen);
             if (n > 0) {
@@ -207,6 +208,21 @@ int main (int argc, char *argv[])
                     sendto(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr*) &cliaddr, cliaddrlen);
 
                     break;
+                } 
+                // if the previous sequence number is expected
+                else if (recvpkt.seqnum == prev_seqnum) {
+                    prev_seqnum = (prev_seqnum + PAYLOAD_SIZE) % MAX_SEQN;
+                    prev_acknum = recvpkt.acknum;
+                    buildPkt(&ackpkt, prev_acknum, prev_seqnum, 0, 0, 1, 0, 0, NULL);
+                    printSend(&ackpkt, 0);
+                    sendto(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr*) &cliaddr, cliaddrlen);
+
+                }
+                // if the previous sequence number is not expected
+                else {
+                    buildPkt(&ackpkt, prev_acknum, prev_seqnum, 0, 0, 1, 1, 0, NULL);
+                    printSend(&ackpkt, 1);
+                    sendto(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr*) &cliaddr, cliaddrlen);
                 }
             }
         }
