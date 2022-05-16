@@ -185,7 +185,7 @@ int main (int argc, char *argv[])
     struct packet pkts[WND_SIZE];
     int s = 0;
     int e = 0;
-    int full = 0;
+    //int full = 0;
 
     // =====================================
     // Send First Packet (ACK containing payload)
@@ -220,14 +220,14 @@ int main (int argc, char *argv[])
                 sendto(sockfd, &pkts[e], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
                 e = (e + 1) % WND_SIZE;
             } else {
-                no_more_data = true
+                no_more_data = true;
                 break;
             }
         }
     while (s != e) {
         n = recvfrom(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr *) &servaddr, (socklen_t *) &servaddrlen);
         if (pkts[s].seqnum == ackpkt.acknum) {
-            printRecv(pkts[s]);
+            printRecv(&pkts[s]);
             s = (s + 1) % WND_SIZE;
             timer = setTimer();
             m = fread(buf, 1, PAYLOAD_SIZE, fp);
@@ -240,13 +240,13 @@ int main (int argc, char *argv[])
             }
         // checking if packet was lost (timeout; resend all packets in window)
         } else if (isTimeout(timer)) {
-            printTimeout(pkts[s])
+            printTimeout(&pkts[s]);
             int tmp_s = s;
             int tmp_e = e;
             timer = setTimer();
             while (tmp_s != tmp_e) {
                 buildPkt(&pkts[tmp_s], pkts[tmp_s].seqnum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 1, pkts[tmp_s].length, pkts[tmp_s].payload);
-                printSend(pkts[tmp_s],1);
+                printSend(&pkts[tmp_s],1);
                 sendto(sockfd, &pkts[tmp_s], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
                 tmp_s = (tmp_s + 1) % WND_SIZE;
             }

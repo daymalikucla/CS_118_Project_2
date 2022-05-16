@@ -147,13 +147,13 @@ int main (int argc, char *argv[])
             sendto(sockfd, &synackpkt, PKT_SIZE, 0, (struct sockaddr*) &cliaddr, cliaddrlen);
             
             while(1) {
-                n = recvfrom(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr*) &cliaddr, (socklen_t *) &cliaddrlen);
+                n = recvfrom(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr *) &cliaddr, (socklen_t *) &cliaddrlen);
                 if (n > 0) {
                     printRecv(&ackpkt);
                     if (ackpkt.seqnum == cliSeqNum && ackpkt.ack && ackpkt.acknum == (synackpkt.seqnum + 1) % MAX_SEQN) {
 
                         int length = snprintf(NULL, 0, "%d", i) + 6;
-                        char* filename = malloc(length);
+                        char* filename = (char*) malloc(length);
                         snprintf(filename, length, "%d.file", i);
 
                         fp = fopen(filename, "w");
