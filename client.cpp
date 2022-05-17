@@ -212,21 +212,22 @@ int main (int argc, char *argv[])
     bool no_more_data = false;
     //  initially send out all packets in window
     while (e != s && !no_more_data) {
-            m = fread(buf, 1, PAYLOAD_SIZE, fp);
-            if (m) {
-                buildPkt(&pkts[e], seqNum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 0, m, buf);
-                seqNum = (seqNum + m) % MAX_SEQN;
-                printSend(&pkts[e], 0);
-                sendto(sockfd, &pkts[e], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
-                e = (e + 1) % WND_SIZE;
-            } else {
-                no_more_data = true;
-                break;
-            }
+        m = fread(buf, 1, PAYLOAD_SIZE, fp);
+        if (m) {
+            buildPkt(&pkts[e], seqNum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 0, m, buf);
+            seqNum = (seqNum + m) % MAX_SEQN;
+            printSend(&pkts[e], 0);
+            sendto(sockfd, &pkts[e], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
+            e = (e + 1) % WND_SIZE;
+        } else {
+            no_more_data = true;
         }
+    }
     while (s != e) {
         n = recvfrom(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr *) &servaddr, (socklen_t *) &servaddrlen);
-        if (pkts[s].seqnum == ackpkt.acknum) {
+        // printf("Value for next val for pkts[s].seqnum: %d\n",(pkts[s].seqnum + pkts[s].length) % MAX_SEQN);
+        // printf("Value for ackpkt.acknum: %d\n",ackpkt.acknum);
+        if ((pkts[s].seqnum + pkts[s].length) % MAX_SEQN == ackpkt.acknum) {
             printRecv(&pkts[s]);
             s = (s + 1) % WND_SIZE;
             timer = setTimer();

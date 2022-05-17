@@ -199,7 +199,8 @@ int main (int argc, char *argv[])
             n = recvfrom(sockfd, &recvpkt, PKT_SIZE, 0, (struct sockaddr *) &cliaddr, (socklen_t *) &cliaddrlen);
             if (n > 0) {
                 printRecv(&recvpkt);
-
+                // printf("Value for recvpkt.seqnum: %d\n",recvpkt.seqnum);
+                // printf("Value for prev_acknum: %d\n",prev_acknum);
                 if (recvpkt.fin) {
                     cliSeqNum = (cliSeqNum + 1) % MAX_SEQN;
 
@@ -210,13 +211,12 @@ int main (int argc, char *argv[])
                     break;
                 } 
                 // if the previous sequence number is expected
-                else if (recvpkt.seqnum == prev_seqnum) {
-                    prev_seqnum = (prev_seqnum + PAYLOAD_SIZE) % MAX_SEQN;
-                    prev_acknum = recvpkt.acknum;
-                    buildPkt(&ackpkt, prev_acknum, prev_seqnum, 0, 0, 1, 0, 0, NULL);
+                else if (recvpkt.seqnum == prev_acknum) {
+                    buildPkt(&ackpkt, prev_seqnum, (prev_acknum + recvpkt.length) % MAX_SEQN, 0, 0, 1, 0, 0, NULL);
                     printSend(&ackpkt, 0);
                     sendto(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr*) &cliaddr, cliaddrlen);
-
+                    prev_seqnum = ackpkt.seqnum;
+                    prev_acknum = ackpkt.acknum;;
                 }
                 // if the previous sequence number is not expected
                 else {
