@@ -202,9 +202,9 @@ int main (int argc, char *argv[])
                 // printf("Value for recvpkt.seqnum: %d\n",recvpkt.seqnum);
                 // printf("Value for prev_acknum: %d\n",prev_acknum);
                 if (recvpkt.fin) {
-                    cliSeqNum = (cliSeqNum + 1) % MAX_SEQN;
+                    prev_acknum = (prev_acknum + 1) % MAX_SEQN;
 
-                    buildPkt(&ackpkt, seqNum, cliSeqNum, 0, 0, 1, 0, 0, NULL);
+                    buildPkt(&ackpkt, seqNum, prev_acknum, 0, 0, 1, 0, 0, NULL);
                     printSend(&ackpkt, 0);
                     sendto(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr*) &cliaddr, cliaddrlen);
 

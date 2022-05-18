@@ -210,40 +210,46 @@ int main (int argc, char *argv[])
     //       Only for demo purpose. DO NOT USE IT in your final submission
     seqNum = (seqNum + m) % MAX_SEQN;
     bool no_more_data = false;
+    int s_mod = 0;
+    int e_mod = 1;
     //  initially send out all packets in window
-    while (e != s && !no_more_data) {
+    while (e_mod != s_mod && !no_more_data) {
         m = fread(buf, 1, PAYLOAD_SIZE, fp);
         if (m) {
-            buildPkt(&pkts[e], seqNum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 0, m, buf);
+            buildPkt(&pkts[e_mod], seqNum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 0, m, buf);
             seqNum = (seqNum + m) % MAX_SEQN;
-            printSend(&pkts[e], 0);
-            sendto(sockfd, &pkts[e], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
-            e = (e + 1) % WND_SIZE;
+            printSend(&pkts[e_mod], 0);
+            sendto(sockfd, &pkts[e_mod], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
+            e = e + 1;
+            e_mod = e % WND_SIZE;
         } else {
             no_more_data = true;
         }
     }
+
     while (s != e) {
         n = recvfrom(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr *) &servaddr, (socklen_t *) &servaddrlen);
-        // printf("Value for next val for pkts[s].seqnum: %d\n",(pkts[s].seqnum + pkts[s].length) % MAX_SEQN);
+        // printf("Value for next val for pkts[s_mod].seqnum: %d\n",(pkts[s_mod].seqnum + pkts[s_mod].length) % MAX_SEQN);
         // printf("Value for ackpkt.acknum: %d\n",ackpkt.acknum);
-        if ((pkts[s].seqnum + pkts[s].length) % MAX_SEQN == ackpkt.acknum) {
-            printRecv(&pkts[s]);
-            s = (s + 1) % WND_SIZE;
+        if ((pkts[s_mod].seqnum + pkts[s_mod].length) % MAX_SEQN == ackpkt.acknum) {
+            printRecv(&pkts[s_mod]);
+            s = s + 1;
+            s_mod = s % WND_SIZE;
             timer = setTimer();
             m = fread(buf, 1, PAYLOAD_SIZE, fp);
             if (m) {
-                buildPkt(&pkts[e], seqNum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 0, m, buf);
+                buildPkt(&pkts[e_mod], seqNum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 0, m, buf);
                 seqNum = (seqNum + m) % MAX_SEQN;
-                printSend(&pkts[e], 0);
-                sendto(sockfd, &pkts[e], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
-                e = (e + 1) % WND_SIZE;
+                printSend(&pkts[e_mod], 0);
+                sendto(sockfd, &pkts[e_mod], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
+                e = e + 1;
+                e_mod = e % WND_SIZE;
             }
         // checking if packet was lost (timeout; resend all packets in window)
         } else if (isTimeout(timer)) {
-            printTimeout(&pkts[s]);
-            int tmp_s = s;
-            int tmp_e = e;
+            printTimeout(&pkts[s_mod]);
+            int tmp_s = s_mod;
+            int tmp_e = e_mod;
             timer = setTimer();
             while (tmp_s != tmp_e) {
                 buildPkt(&pkts[tmp_s], pkts[tmp_s].seqnum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 1, pkts[tmp_s].length, pkts[tmp_s].payload);
