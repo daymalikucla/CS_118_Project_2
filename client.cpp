@@ -9,6 +9,8 @@
 #include <sys/time.h>
 #include <fcntl.h>
 #include <netdb.h> 
+#include <algorithm>
+#include <array>
 
 // =====================================
 
@@ -227,16 +229,22 @@ int main (int argc, char *argv[])
         }
     }
 
+    // create list of current sequence numbers to check if ackpkt.acknum is in the list
+    const int length_pck_seqnum_list = e - s;
+    int pck_seqnum_list[length_pck_seqnum_list];
+    for (int pck_idx = 0; pck_idx < length_pck_seqnum_list; pck_idx++) {
+        pck_seqnum_list[pck_idx] = pkts[pck_idx].seqnum + pkts[pck_idx].length;
+    }
+
     while (s != e) {
         n = recvfrom(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr *) &servaddr, (socklen_t *) &servaddrlen);
-        // printf("Value for next val for pkts[s_mod].seqnum: %d\n",(pkts[s_mod].seqnum + pkts[s_mod].length) % MAX_SEQN);
-        // printf("Value for ackpkt.acknum: %d\n",ackpkt.acknum);
-        if ((pkts[s_mod].seqnum + pkts[s_mod].length) % MAX_SEQN == ackpkt.acknum) {
-            printRecv(&pkts[s_mod]);
+        if (std::find(pck_seqnum_list, pck_seqnum_list + length_pck_seqnum_list, ackpkt.acknum) != pck_seqnum_list + length_pck_seqnum_list) {
+            printRecv(&ackpkt);
             s = s + 1;
             s_mod = s % WND_SIZE;
             timer = setTimer();
             m = fread(buf, 1, PAYLOAD_SIZE, fp);
+
             if (m) {
                 buildPkt(&pkts[e_mod], seqNum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 0, m, buf);
                 seqNum = (seqNum + m) % MAX_SEQN;
@@ -244,18 +252,29 @@ int main (int argc, char *argv[])
                 sendto(sockfd, &pkts[e_mod], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
                 e = e + 1;
                 e_mod = e % WND_SIZE;
+
+                // replace old SeqNum with new seqNum in pck_seqnum_list
+                pck_seqnum_list[(s - 1) % WND_SIZE] = seqNum;
+            }
+            else {
+                // if no more data to read, replace value in pck_seqnum_list with MAX_SEQN
+                // to get a value that is not possible in the list and so that we will not
+                // acknowledge the same seqNum again when there is no more data to read
+                pck_seqnum_list[(s - 1) % WND_SIZE] = MAX_SEQN;
             }
         // checking if packet was lost (timeout; resend all packets in window)
-        } else if (isTimeout(timer)) {
+        } 
+        else if (isTimeout(timer)) {
             printTimeout(&pkts[s_mod]);
-            int tmp_s = s_mod;
-            int tmp_e = e_mod;
+            int tmp_s = {s};
+            int tmp_e = {e};
             timer = setTimer();
             while (tmp_s != tmp_e) {
-                buildPkt(&pkts[tmp_s], pkts[tmp_s].seqnum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 1, pkts[tmp_s].length, pkts[tmp_s].payload);
-                printSend(&pkts[tmp_s],1);
-                sendto(sockfd, &pkts[tmp_s], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
-                tmp_s = (tmp_s + 1) % WND_SIZE;
+                int tmp_mod_s = tmp_s % 10;
+                buildPkt(&pkts[tmp_mod_s], pkts[tmp_mod_s].seqnum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 1, pkts[tmp_mod_s].length, pkts[tmp_mod_s].payload);
+                printSend(&pkts[tmp_mod_s],1);
+                sendto(sockfd, &pkts[tmp_mod_s], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
+                tmp_s = tmp_s + 1;
             }
         } 
     }

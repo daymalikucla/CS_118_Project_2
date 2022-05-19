@@ -216,12 +216,12 @@ int main (int argc, char *argv[])
                     printSend(&ackpkt, 0);
                     sendto(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr*) &cliaddr, cliaddrlen);
                     prev_seqnum = ackpkt.seqnum;
-                    prev_acknum = ackpkt.acknum;;
+                    prev_acknum = ackpkt.acknum;
                 }
                 // if the previous sequence number is not expected
                 else {
-                    buildPkt(&ackpkt, prev_acknum, prev_seqnum, 0, 0, 1, 1, 0, NULL);
-                    printSend(&ackpkt, 1);
+                    buildPkt(&ackpkt, prev_seqnum, prev_acknum, 0, 0, 0, 1, 0, NULL);
+                    printSend(&ackpkt, 0);
                     sendto(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr*) &cliaddr, cliaddrlen);
                 }
             }
