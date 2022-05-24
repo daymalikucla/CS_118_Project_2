@@ -212,11 +212,13 @@ int main (int argc, char *argv[])
                 } 
                 // if the previous sequence number is expected
                 else if (recvpkt.seqnum == prev_acknum) {
+                    fwrite(recvpkt.payload,1,recvpkt.length,fp);
                     buildPkt(&ackpkt, prev_seqnum, (prev_acknum + recvpkt.length) % MAX_SEQN, 0, 0, 1, 0, 0, NULL);
                     printSend(&ackpkt, 0);
                     sendto(sockfd, &ackpkt, PKT_SIZE, 0, (struct sockaddr*) &cliaddr, cliaddrlen);
                     prev_seqnum = ackpkt.seqnum;
                     prev_acknum = ackpkt.acknum;
+
                 }
                 // if the previous sequence number is not expected
                 else {

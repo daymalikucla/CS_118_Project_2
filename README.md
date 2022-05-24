@@ -1,7 +1,7 @@
 # CS118 Project 2
 
 Malik Day; 005668317; dayxx369@ucla.edu
-Quinn Hammel; 305325907; [INSERT EMAIL ADDRESS]
+Quinn Hammel; 305325907; quinnhammel@ucla.edu
 
 This is the repo for spring 2022 cs118 project 2.
 
