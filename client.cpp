@@ -217,7 +217,7 @@ int main (int argc, char *argv[])
     while (e_mod != s_mod && !no_more_data) {
         m = fread(buf, 1, PAYLOAD_SIZE, fp);
         if (m) {
-            buildPkt(&pkts[e_mod], seqNum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 0, m, buf);
+            buildPkt(&pkts[e_mod], seqNum, 0, 0, 0, 0, 0, m, buf);
             seqNum = (seqNum + m) % MAX_SEQN;
             printSend(&pkts[e_mod], 0);
             sendto(sockfd, &pkts[e_mod], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
@@ -245,7 +245,7 @@ int main (int argc, char *argv[])
             m = fread(buf, 1, PAYLOAD_SIZE, fp);
 
             if (m) {
-                buildPkt(&pkts[e_mod], seqNum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 0, m, buf);
+                buildPkt(&pkts[e_mod], seqNum, 0, 0, 0, 0, 0, m, buf);
                 seqNum = (seqNum + m) % MAX_SEQN;
                 printSend(&pkts[e_mod], 0);
                 sendto(sockfd, &pkts[e_mod], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
@@ -270,7 +270,7 @@ int main (int argc, char *argv[])
             timer = setTimer();
             while (tmp_s != tmp_e) {
                 int tmp_mod_s = tmp_s % 10;
-                buildPkt(&pkts[tmp_mod_s], pkts[tmp_mod_s].seqnum, (synackpkt.seqnum + 1) % MAX_SEQN, 0, 0, 0, 1, pkts[tmp_mod_s].length, pkts[tmp_mod_s].payload);
+                buildPkt(&pkts[tmp_mod_s], pkts[tmp_mod_s].seqnum, 0, 0, 0, 0, 0, pkts[tmp_mod_s].length, pkts[tmp_mod_s].payload);
                 printSend(&pkts[tmp_mod_s],1);
                 sendto(sockfd, &pkts[tmp_mod_s], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
                 tmp_s = tmp_s + 1;
