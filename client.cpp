@@ -270,8 +270,12 @@ int main (int argc, char *argv[])
             timer = setTimer();
             while (tmp_s != tmp_e) {
                 int tmp_mod_s = tmp_s % 10;
-                buildPkt(&pkts[tmp_mod_s], pkts[tmp_mod_s].seqnum, 0, 0, 0, 0, 0, pkts[tmp_mod_s].length, pkts[tmp_mod_s].payload);
-                printSend(&pkts[tmp_mod_s],1);
+                // only need to set to 0 if not dupack or ack.
+                if (!(pkts[tmp_mod_s].ack || pkts[tmp_mod_s].dupack)) { 
+                     buildPkt(&pkts[tmp_mod_s], pkts[tmp_mod_s].seqnum, 0, 0, 0, 0, 0, pkts[tmp_mod_s].length, pkts[tmp_mod_s].payload); 
+                }
+                
+                printSend(&pkts[tmp_mod_s], 1);
                 sendto(sockfd, &pkts[tmp_mod_s], PKT_SIZE, 0, (struct sockaddr*) &servaddr, servaddrlen);
                 tmp_s = tmp_s + 1;
             }
