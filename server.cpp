@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <fcntl.h>
+#include <time.h>
 
 // =====================================
 
@@ -115,8 +116,9 @@ int main (int argc, char *argv[])
     fcntl(sockfd, F_SETFL, O_NONBLOCK);
 
     // =====================================
-
-    unsigned short seqNum = (rand() * rand()) % MAX_SEQN;
+    srand(time(0));
+    int rand_int = rand() * rand();
+    unsigned short seqNum = rand_int % MAX_SEQN;
 
     for (int i = 1; ; i++) {
         // =====================================

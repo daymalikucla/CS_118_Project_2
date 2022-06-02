@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <netdb.h> 
 #include <algorithm>
+#include <time.h>
 
 // =====================================
 
@@ -143,8 +144,8 @@ int main (int argc, char *argv[])
     // first piece of along file data thus is further below
 
     struct packet synpkt, synackpkt;
-
-    unsigned short seqNum = rand() % MAX_SEQN;
+    srand(time(0));
+    unsigned short seqNum = (rand()) % MAX_SEQN;
     buildPkt(&synpkt, seqNum, 0, 1, 0, 0, 0, 0, NULL);
 
     printSend(&synpkt, 0);
